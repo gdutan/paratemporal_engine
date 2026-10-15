@@ -1,0 +1,25 @@
+\subsection{T2: slippery FrozenLake 8$\times$8, prediction}
+\label{sec:t2}
+\begin{center}\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+\textbf{Target} & \textbf{n=1} & \textbf{n=2} & \textbf{n=4} & \textbf{n=8}\\
+\midrule
+A: n-step TD (model-free) & 0.185\,$\pm$\,0.002 & 0.174\,$\pm$\,0.002 & 0.166\,$\pm$\,0.002 & 0.161\,$\pm$\,0.002\\
+\quad best $\alpha$, work/episode & $\alpha$=0.6, 42 & $\alpha$=0.4, 42 & $\alpha$=0.4, 42 & $\alpha$=0.2, 42\\[2pt]
+B: exact (exhaustive + merge) & 0.159\,$\pm$\,0.002 & 0.137\,$\pm$\,0.002 & 0.114\,$\pm$\,0.003 & 0.094\,$\pm$\,0.003\\
+\quad best $\alpha$, work/episode & $\alpha$=1, 205 & $\alpha$=1, 804 & $\alpha$=1, 4{,}067 & $\alpha$=1, 21{,}502\\[2pt]
+C: sampled + merge + budget & 0.168\,$\pm$\,0.002 & 0.147\,$\pm$\,0.003 & 0.135\,$\pm$\,0.003 & 0.124\,$\pm$\,0.002\\
+\quad best $\alpha$, work/episode & $\alpha$=1, 201 & $\alpha$=1, 380 & $\alpha$=0.8, 676 & $\alpha$=0.6, 1{,}358\\[2pt]
+D: independent rollouts & 0.168\,$\pm$\,0.002 & 0.150\,$\pm$\,0.003 & 0.135\,$\pm$\,0.003 & 0.123\,$\pm$\,0.002\\
+\quad best $\alpha$, work/episode & $\alpha$=1, 201 & $\alpha$=1, 359 & $\alpha$=0.8, 694 & $\alpha$=0.6, 1{,}227\\[2pt]
+\bottomrule
+\end{tabular}
+\end{center}
+\noindent Best step size per cell. RMS error over nonterminal states, averaged over the first 30 episodes and 50 runs (exploring starts; $\varepsilon=0.2$-soft optimal policy; $\gamma=0.99$). Work counts transitions examined or sampled, including the agent's own steps.
+
+\begin{figure}[h]\centering
+\includegraphics[width=\linewidth]{t2_frozenlake_prediction.png}
+\caption{T2: slippery FrozenLake 8$\times$8, prediction: error against step size for each target, and best-$\alpha$ error against work.}
+\end{figure}
+

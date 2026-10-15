@@ -1,0 +1,29 @@
+% Shared cross-document links for the ParaDEVS documents. Each document defines \docsdir (path from its folder to
+% docs/) and \thisdoc (its key below), then \input's this file.
+%
+% \doclink{path relative to docs/}{text}: a link to another PDF. Links are plain URI actions (file:///...), because
+% Edge, Chrome and VS Code's PDF viewers ignore hyperref's usual "open another PDF" (GoToR) links. The absolute
+% address comes from docroot.tex, which scripts/build_docs.sh regenerates; rerun it if the folder moves.
+%
+% \relateddocs: the "ParaDEVS documents" box listing every document, with the current one marked.
+\InputIfFileExists{\docsdir docroot.tex}{}{\gdef\docroot{.}}
+\providecommand{\thisdoc}{}
+\definecolor{pdlink}{RGB}{20,80,170}
+\definecolor{pdrelbg}{RGB}{243,246,252}
+\definecolor{pdrelframe}{RGB}{190,200,220}
+\makeatletter
+\newcommand{\doclink}[2]{\hyper@linkurl{\textcolor{pdlink}{\textbf{#2}}}{\docroot/#1}}
+\newcommand{\pd@item}[4]{% key, path, title, description
+  \def\pd@key{#1}%
+  \item \ifx\pd@key\thisdoc\textbf{#3} (this document)\else\doclink{#2}{#3}\fi: #4}
+\newcommand{\relateddocs}{\par\medskip\noindent
+  \fcolorbox{pdrelframe}{pdrelbg}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{\small
+  \textbf{ParaDEVS documents.} The entry point is \doclink{ParaDEVS_Start_Here.pdf}{Start Here}, a reading guide
+  that links every document.
+  \begin{itemize}[leftmargin=1.4em,itemsep=0pt,topsep=2pt]
+  \pd@item{report}{report/ParaDEVS_Build_Report.pdf}{Build Report}{what has been built, how it was verified, what is next}
+  \pd@item{howto}{howto/ParaDEVS_HowTo.pdf}{How-To Guide}{setup, tutorials, API reference, troubleshooting}
+  \pd@item{architecture}{architecture/ParaDEVS_Architecture.pdf}{Architecture Guide}{how the library works and how to read results}
+  \pd@item{rl}{rl/ParaDEVS_RL_Plan.pdf}{RL Plan}{reinforcement-learning plan, analysis and results}
+  \end{itemize}}}\par\medskip}
+\makeatother

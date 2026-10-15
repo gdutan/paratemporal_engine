@@ -1,0 +1,21 @@
+{
+    "java.project.sourcePaths": [
+        "src/main/java",
+        "src/examples/java",
+        "src/sandbox/java"
+    ],
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar"
+    ],
+    "java.project.outputPath": "build/vscode",
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.compile.nullAnalysis.mode": "disabled",
+    "java.debug.settings.onBuildFailureProceed": false,
+    "files.encoding": "utf8",
+    "files.exclude": {
+        "build/vscode": true
+    },
+    "terminal.integrated.defaultProfile.windows": "Git Bash",
+    "python.defaultInterpreterPath": "${workspaceFolder}/rl/.venv/Scripts/python.exe",
+    "python.terminal.activateEnvironment": true
+}

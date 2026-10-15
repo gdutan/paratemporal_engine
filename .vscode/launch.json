@@ -1,0 +1,61 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Sandbox: RunSandbox",
+            "request": "launch",
+            "mainClass": "sandbox.RunSandbox",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "type": "java",
+            "name": "Run current file",
+            "request": "launch",
+            "mainClass": "${file}",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "type": "java",
+            "name": "Tutorial: RunServiceLine",
+            "request": "launch",
+            "mainClass": "examples.tutorial.RunServiceLine",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "type": "java",
+            "name": "Test: VerifyTimedReward",
+            "request": "launch",
+            "mainClass": "examples.reward.VerifyTimedReward",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "type": "java",
+            "name": "Test: VerifyFinance",
+            "request": "launch",
+            "mainClass": "examples.finance.VerifyFinance",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "type": "java",
+            "name": "Test: VerifyBaseball",
+            "request": "launch",
+            "mainClass": "examples.baseball.VerifyBaseball",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "type": "java",
+            "name": "Plain MS4 run (no engine)",
+            "request": "launch",
+            "mainClass": "examples.PlainMs4Run",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        }
+    ]
+}

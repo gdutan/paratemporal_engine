@@ -1,0 +1,25 @@
+\subsection{T1: 19-state random walk, n-step TD prediction}
+\label{sec:t1}
+\begin{center}\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+\textbf{Target} & \textbf{n=1} & \textbf{n=2} & \textbf{n=4} & \textbf{n=8}\\
+\midrule
+A: n-step TD (model-free) & 0.345\,$\pm$\,0.002 & 0.276\,$\pm$\,0.004 & 0.263\,$\pm$\,0.005 & 0.277\,$\pm$\,0.005\\
+\quad best $\alpha$, work/episode & $\alpha$=0.8, 99 & $\alpha$=0.6, 99 & $\alpha$=0.4, 99 & $\alpha$=0.2, 99\\[2pt]
+B: exact (exhaustive + merge) & 0.285\,$\pm$\,0.005 & 0.238\,$\pm$\,0.006 & 0.181\,$\pm$\,0.006 & 0.139\,$\pm$\,0.006\\
+\quad best $\alpha$, work/episode & $\alpha$=1, 296 & $\alpha$=1, 687 & $\alpha$=1, 2{,}030 & $\alpha$=1, 6{,}693\\[2pt]
+C: sampled + merge + budget & 0.305\,$\pm$\,0.006 & 0.279\,$\pm$\,0.005 & 0.239\,$\pm$\,0.005 & 0.217\,$\pm$\,0.004\\
+\quad best $\alpha$, work/episode & $\alpha$=1, 495 & $\alpha$=1, 886 & $\alpha$=0.8, 1{,}711 & $\alpha$=0.6, 3{,}268\\[2pt]
+D: independent rollouts & 0.305\,$\pm$\,0.006 & 0.280\,$\pm$\,0.005 & 0.242\,$\pm$\,0.005 & 0.218\,$\pm$\,0.005\\
+\quad best $\alpha$, work/episode & $\alpha$=1, 495 & $\alpha$=1, 913 & $\alpha$=0.8, 1{,}632 & $\alpha$=0.6, 3{,}231\\[2pt]
+\bottomrule
+\end{tabular}
+\end{center}
+\noindent Best step size per cell. RMS error over the 19 states, averaged over the first 10 episodes and 100 runs. Work counts transitions examined or sampled, including the agent's own steps.
+
+\begin{figure}[h]\centering
+\includegraphics[width=\linewidth]{t1_nstep_td.png}
+\caption{T1: 19-state random walk, n-step TD prediction: error against step size for each target, and best-$\alpha$ error against work.}
+\end{figure}
+

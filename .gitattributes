@@ -1,0 +1,6 @@
+# Normalize text files; shell scripts must stay LF or bash fails on "\r".
+* text=auto
+*.sh text eol=lf
+*.jar binary
+*.pdf binary
+*.png binary

@@ -1,0 +1,141 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{booktabs,tabularx,array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage[obeyspaces,spaces]{url}
+\usepackage[hidelinks]{hyperref}
+
+\setlist{itemsep=2pt,topsep=4pt}
+\setlength{\parskip}{5pt}
+\setlength{\parindent}{0pt}
+\setlength{\emergencystretch}{3em}
+\renewcommand{\arraystretch}{1.25}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+\definecolor{linkc}{RGB}{20,80,170}
+\definecolor{cardbg}{RGB}{246,248,252}
+\definecolor{cardframe}{RGB}{190,200,220}
+\definecolor{okbg}{RGB}{232,246,234}
+\hypersetup{colorlinks=true,linkcolor=linkc,urlcolor=linkc,filecolor=linkc}
+
+\newcommand{\docsdir}{}
+\input{doclinks.tex}
+% \card{link}{title}{pages}{for}{contents}
+\newcommand{\card}[5]{\par\smallskip\noindent\fcolorbox{cardframe}{cardbg}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+  {\large\doclink{#1}{#2}}\hfill{\small #3}\par\smallskip
+  \small\textbf{Read it if:} #4\par\smallskip
+  \textbf{Inside:} #5\par\smallskip
+  {\footnotesize File: \path{docs/#1}}}}\par\smallskip}
+
+\title{\textbf{ParaDEVS Library}\\[4pt]\large Start Here: a reading guide to every document}
+\author{ParaDEVS Library workspace, Binghamton}
+\date{Last updated October 11, 2026}
+
+\begin{document}
+\maketitle
+
+\noindent\colorbox{okbg}{\parbox{\dimexpr\linewidth-2\fboxsep}{%
+\textbf{The project in three sentences.} ParaDEVS is a Java library that runs a stochastic MS4 DEVS model as a
+\emph{paratemporal} computation: whenever the model makes a random choice, the engine follows the possible outcomes
+and returns the resulting distribution. A model only has to get its random values from \texttt{Para.choose(label,
+law)}. Version 0 is built and verified (77 of 77 checks pass), and a reinforcement-learning track has started.}}
+
+\medskip
+All titles below are clickable links that open the other PDFs. They point to the documents' current location;
+if the \path{ParaDEVS_Library} folder is moved, run \path{bash scripts/build_docs.sh} to refresh them.
+
+%=====================================================================
+\section*{1.\quad Pick your path}
+
+\begin{tabularx}{\linewidth}{@{}>{\raggedright}p{5.4cm}Y@{}}
+\toprule
+\textbf{I want to\dots} & \textbf{Read}\\
+\midrule
+know what exists, whether it works, and what is next & \doclink{report/ParaDEVS_Build_Report.pdf}{Build Report},
+  Section 1 (one page)\\
+write my first model and run it & \doclink{howto/ParaDEVS_HowTo.pdf}{How-To Guide}: setup, then the scripted-model
+  tutorial\\
+bring a model over from MS4 Me & \doclink{howto/ParaDEVS_HowTo.pdf}{How-To Guide}: the MS4 Me import tutorial\\
+understand how the engine works inside & \doclink{architecture/ParaDEVS_Architecture.pdf}{Architecture Guide}\\
+interpret a result (mass, residual, samples) & \doclink{architecture/ParaDEVS_Architecture.pdf}{Architecture
+  Guide}: the result-interpretation section\\
+understand ``step'' versus ``draw'' & \doclink{architecture/ParaDEVS_Architecture.pdf}{Architecture Guide}: the
+  step-versus-draw section\\
+see the RL plan and results & \doclink{rl/ParaDEVS_RL_Plan.pdf}{RL Plan}\\
+reproduce a number & \doclink{report/ParaDEVS_Build_Report.pdf}{Build Report}, Appendix A\\
+look up a term & \doclink{report/ParaDEVS_Build_Report.pdf}{Build Report}, Appendix B (glossary)\\
+\bottomrule
+\end{tabularx}
+
+%=====================================================================
+\section*{2.\quad Suggested reading order}
+
+\begin{center}
+\begin{tikzpicture}[doc/.style={draw=cardframe,fill=cardbg,rounded corners=2pt,align=center,font=\small,
+  minimum width=3.1cm,minimum height=1.1cm},arr/.style={-{Latex[length=2mm]},thick}]
+\node[doc] (s) {Start Here\\(this page)};
+\node[doc,right=6mm of s] (r) {\doclink{report/ParaDEVS_Build_Report.pdf}{Build Report}\\status};
+\node[doc,right=6mm of r] (h) {\doclink{howto/ParaDEVS_HowTo.pdf}{How-To Guide}\\use it};
+\node[doc,right=6mm of h] (a) {\doclink{architecture/ParaDEVS_Architecture.pdf}{Architecture}\\how it works};
+\node[doc,below=7mm of a] (l) {\doclink{rl/ParaDEVS_RL_Plan.pdf}{RL Plan}\\applications};
+\draw[arr] (s) -- (r); \draw[arr] (r) -- (h); \draw[arr] (h) -- (a); \draw[arr] (a) -- (l);
+\end{tikzpicture}
+\end{center}
+New to the project: read left to right. Already using the library: jump straight to the document you need.
+
+%=====================================================================
+\section*{3.\quad The documents}
+
+\card{report/ParaDEVS_Build_Report.pdf}{Build Report}{13 pages}
+{you want the overall picture: what was built, how it was verified, what went wrong, what is next.}
+{one-page summary; starting point and decisions; the library's parts; verification against the paper, finance and
+baseball baselines; problems fixed; RL results in plain terms; limits; next steps and open decisions; timeline;
+commands to reproduce everything; glossary; file map.}
+
+\card{howto/ParaDEVS_HowTo.pdf}{How-To Guide and Tutorial}{17 pages}
+{you want to use the library.}
+{installation and VS Code setup; tutorial building a small DEVS model purely in Java; tutorial importing an MS4 Me
+model (what to bring over and the two edits needed); API reference; troubleshooting.}
+
+\card{architecture/ParaDEVS_Architecture.pdf}{Architecture and Interpretation Guide}{13 pages}
+{you want to know how it works, or what a number in a result means.}
+{design principles (including step versus draw); the three layers and how they drive MS4; the life of a branch;
+merging and why it is safe; how to read results under each selection rule; which theory guarantees hold; extension
+points.}
+
+\card{rl/ParaDEVS_RL_Plan.pdf}{RL Applications Plan and Progress}{9 pages}
+{you are interested in reinforcement learning with the paratemporal engine.}
+{where paratemporal fits in RL; Monte Carlo sampling with merging and its effect on variance; toy problems; Python
+baselines; options for connecting Java/MS4 to Python (including a DEVS message broker); phased plan R0--R5;
+progress and results so far.}
+
+%=====================================================================
+\section*{4.\quad Other material}
+
+\begin{tabularx}{\linewidth}{@{}>{\raggedright}p{5.6cm}Y@{}}
+\toprule
+\textbf{Where} & \textbf{What}\\
+\midrule
+\path{ParaDEVS_Library/README.md} & Quick-start commands and a full map of the folder\\
+\path{Do s/documents/paratemporal/} & The theory (authoritative): \path{main_paratemporal.tex},
+  \path{Paratemporal_Adaptation.tex}, \path{pt_reward_enumeration.py}\\
+\path{ParaDEVS_Library/notes/} & Working notes from the first days (Markdown). Superseded by the PDFs above; kept for
+  the decision log and to-do list in \path{03_scope_and_todo.md}\\
+\path{ParaDEVS_Library/runs/} & Saved runs of the old engines, used as verification baselines\\
+\path{ParaDEVS_Library/rl/experiments/results/} & Raw RL results (JSON, CSV, plots)\\
+\bottomrule
+\end{tabularx}
+
+%=====================================================================
+\section*{5.\quad Keeping the documents up to date}
+Each PDF has a VS Code task (Terminal $\rightarrow$ Run Task, ``compile the \dots\ PDF''). This guide and the build report
+are rebuilt, with fresh links, by \path{bash scripts/build_docs.sh}. All documents are LaTeX;
+the source sits next to each PDF. When a document is added, add a card for it here.
+
+\end{document}

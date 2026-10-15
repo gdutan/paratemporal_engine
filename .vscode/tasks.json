@@ -1,0 +1,101 @@
+{
+    "version": "2.0.0",
+    "options": {
+        "cwd": "${workspaceFolder}",
+        "shell": {
+            "executable": "C:\\Program Files\\Git\\bin\\bash.exe",
+            "args": [
+                "-c"
+            ]
+        }
+    },
+    "tasks": [
+        {
+            "label": "ParaDEVS: build + run all tests",
+            "type": "shell",
+            "command": "bash scripts/build_library.sh",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "ParaDEVS: run one test",
+            "type": "shell",
+            "command": "bash scripts/build_library.sh ${input:testName}",
+            "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "ParaDEVS: package MS4 core jar (lib/ms4-core.jar)",
+            "type": "shell",
+            "command": "bash scripts/package_ms4_core.sh",
+            "problemMatcher": []
+        },
+        {
+            "label": "ParaDEVS: MS4 Me import demo (needs MS4 Me jars)",
+            "type": "shell",
+            "command": "bash scripts/run_ms4me_import_demo.sh",
+            "problemMatcher": []
+        },
+        {
+            "label": "ParaDEVS: compile the architecture PDF",
+            "type": "shell",
+            "command": "cd docs/architecture && latexmk -pdf -interaction=nonstopmode ParaDEVS_Architecture.tex && latexmk -c ParaDEVS_Architecture.tex",
+            "problemMatcher": []
+        },
+        {
+            "label": "ParaDEVS: compile all PDFs (refreshes cross-links)",
+            "type": "shell",
+            "command": "bash scripts/build_docs.sh",
+            "problemMatcher": []
+        },
+        {
+            "label": "ParaDEVS: compile the how-to PDF",
+            "type": "shell",
+            "command": "cd docs/howto && latexmk -pdf -interaction=nonstopmode ParaDEVS_HowTo.tex && latexmk -c ParaDEVS_HowTo.tex",
+            "problemMatcher": []
+        },
+        {
+            "label": "RL: run estimator tests",
+            "type": "shell",
+            "command": "cd rl && ./.venv/Scripts/python.exe tests/test_targets.py",
+            "problemMatcher": []
+        },
+        {
+            "label": "RL: run T1 study (resumable)",
+            "type": "shell",
+            "command": "cd rl && ./.venv/Scripts/python.exe experiments/t1_nstep_td.py",
+            "problemMatcher": []
+        },
+        {
+            "label": "RL: run T2 study (resumable)",
+            "type": "shell",
+            "command": "cd rl && ./.venv/Scripts/python.exe experiments/t2_frozenlake_prediction.py",
+            "problemMatcher": []
+        },
+        {
+            "label": "RL: rebuild result tables and compile the RL plan PDF",
+            "type": "shell",
+            "command": "rl/.venv/Scripts/python.exe rl/experiments/make_tex_tables.py && cd docs/rl && latexmk -pdf -interaction=nonstopmode ParaDEVS_RL_Plan.tex && latexmk -c ParaDEVS_RL_Plan.tex",
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "testName",
+            "type": "pickString",
+            "description": "Which test?",
+            "options": [
+                "sandbox",
+                "tutorial",
+                "reward",
+                "finance",
+                "baseball",
+                "plain"
+            ],
+            "default": "tutorial"
+        }
+    ]
+}

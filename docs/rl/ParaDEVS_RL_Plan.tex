@@ -1,0 +1,289 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,tabularx,array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage[obeyspaces,spaces]{url}
+\usepackage[hidelinks]{hyperref}
+
+\setlist{itemsep=2pt,topsep=4pt}
+\setlength{\parskip}{4pt}
+\setlength{\emergencystretch}{3em}
+\renewcommand{\arraystretch}{1.2}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\definecolor{notebg}{RGB}{238,244,252}
+\definecolor{decbg}{RGB}{253,240,232}
+\definecolor{codebg}{RGB}{247,247,250}
+\definecolor{codeframe}{RGB}{200,200,210}
+\lstset{basicstyle=\ttfamily\small, columns=fullflexible, keepspaces=true, backgroundcolor=\color{codebg},
+  frame=single, rulecolor=\color{codeframe}, breaklines=true, xleftmargin=4pt, xrightmargin=4pt}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\note}[1]{\par\noindent\colorbox{notebg}{\parbox{\dimexpr\linewidth-2\fboxsep}{\small\textbf{Note.} #1}}\par}
+\newcommand{\decision}[1]{\par\noindent\colorbox{decbg}{\parbox{\dimexpr\linewidth-2\fboxsep}{\small\textbf{Decision needed.} #1}}\par}
+
+\title{\textbf{Paratemporal Methods for Reinforcement Learning}\\[4pt]\large Plan and progress (RL track)}
+\author{ParaDEVS Library workspace, Binghamton}
+\date{Started October 10, 2026}
+
+\newcommand{\docsdir}{../}
+\def\thisdoc{rl}
+\input{../doclinks.tex}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent This plan identifies where the paratemporal engine (exact or sampled branching with merging) can give
+reinforcement learning something standard methods do not. It analyses the variance consequences of Monte Carlo
+sampling at every stage combined with merging, proposes toy problems with known answers and standard Python baselines,
+and surveys how the Java/MS4 engine and a Python learner should communicate. A progress section records what has been
+built (Section~\ref{sec:progress}).
+\end{abstract}
+
+\relateddocs
+
+\tableofcontents
+
+%=====================================================================
+\section{Where we are today}
+\begin{itemize}
+\item The Demo Deliverable's RL side is \path{ParaDEVS_Barb_Q_Constructor.ipynb} (Colab, PyTorch). It runs tabular
+  Q-learning on stock CSVs, then \textbf{row-normalises the Q-table into action probabilities} and saves it as a CSV.
+  The Java engine reads that CSV as a stochastic policy (the \code{Trader} model in the finance port).
+\item So today the engine does \textbf{policy evaluation}: the exact distribution of returns of a fixed stochastic
+  policy in a stochastic environment. The integration is offline, through a file. The Demo README's
+  \code{ms4me.para(env, action, state, N)} is the intended online interface and does not exist yet.
+\item Library v0 supports a fixed input trace only. An agent that reacts to outputs (``reactive inputs'') is future work.
+\end{itemize}
+
+%=====================================================================
+\section{Where paratemporal fits in RL}
+\begin{center}
+\small
+\begin{tabularx}{\linewidth}{@{}p{2.6cm} Y Y Y@{}}
+\toprule
+\textbf{Use} & \textbf{Engine provides} & \textbf{Standard alternative} & \textbf{Why it might win}\\
+\midrule
+A. Policy evaluation & exact $V^\pi(s)$ and the full return distribution & many Monte Carlo rollouts; TD & no sampling variance where draws are discrete and merge well\\
+B. n-step targets & $E[G_{t:t+n}]$ from $s_t$, exact or sampled with merging, leaves bootstrapped from the learner's $V$ & one sampled n-step return; tree backup; $Q(\sigma)$ & lower-variance targets; generalises Expected SARSA and tree backup to stochastic environments with a simulator\\
+C. Distributional targets & the distribution of the n-step return & C51, QR-DQN learn it by sampling & exact target distributions; risk measures such as CVaR for finance\\
+D. Lookahead for control & sparse sampling or tree search over the DEVS model, merging turns the tree into a DAG & MCTS, sparse sampling (Kearns, Mansour \& Ng 2002) & merging handles transpositions; exactness on small branches\\
+\bottomrule
+\end{tabularx}
+\end{center}
+\textbf{Recommended first target: B (n-step targets), with A as its special case} ($n\to$ episode end). It is closest
+to the proposed method, has a clean ground truth, and plugs into any TD learner.
+
+%=====================================================================
+\section{Monte Carlo at every stage, plus merging: variance}
+\label{sec:variance}
+
+\paragraph{Setup.} At each stage every live node draws $k$ children of weight $w/k$. After the stage, nodes in the same
+state are merged and their weights added. The concern: merging means fewer sample paths are drawn than without merging.
+
+\paragraph{Theory.}
+\begin{itemize}
+\item \textbf{Unbiased either way.} A child carries $w/k$, so $E[\sum_i (w/k) f(v_i)] = w\,E f$. Merging equal
+  continuations and sampling their future afresh preserves this (main\_paratemporal, Proposition ``Safe merging'',
+  sampled case).
+\item \textbf{Why variance rises with a fixed $k$.} Two nodes of weights $w_1, w_2$ in the same state, $\sigma^2$ the
+  variance of one sampled estimate of that state's future. Unmerged, they have independent futures:
+  $(w_1^2+w_2^2)\sigma^2/k$. Merged, they share one: $(w_1+w_2)^2\sigma^2/k$, larger by $2w_1w_2\sigma^2/k$. Merging
+  with a fixed $k$ discards independent samples, as suspected, and also saves the work of drawing them.
+\item \textbf{The fix is reallocation.} Keep a per-stage budget $B$ and give merged node $i$ $n_i\approx B\,w_i/W$ children
+  (at least one), each of weight $w_i/n_i$. Unbiasedness holds because $n_i$ depends only on the past. Since the choice
+  depends on weights, it falls outside the paper's merge proposition and needs its own short argument; dropping nodes
+  ($n_i=0$) requires Russian roulette to stay unbiased.
+\item \textbf{Safe merging rarely fires in RL.} It requires equal observations, so accumulated returns must match too;
+  with continuous rewards they almost never do. Merging on state only while carrying the probability-weighted
+  accumulated return $A=\sum w\,G_{\text{past}}$ is exact for \emph{expectations}, by linearity
+  ($E[G]=\sum_s A_s+\sum_s W_s\,E[G_{\text{future}}\mid s]$), but loses the return \emph{distribution}. This is the old IH
+  idea with a precise validity condition: a linear objective and an additive reward.
+\end{itemize}
+
+\paragraph{Experiment} (\path{rl/experiments/merge_variance.py}). 19-state random walk, start 13, 6-step target
+bootstrapped with $V(s)=(s-10)/10$, step reward $s'/100$ so that returns differ between paths, 1000 replications.
+Work counts transitions sampled.
+\begin{center}
+\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+\textbf{Estimator} & \textbf{Mean} (exact 1.08) & \textbf{Variance} & \textbf{Work} & \textbf{Var $\times$ work}\\
+\midrule
+exhaustive + accumulator merge & \textbf{1.08000 exact} & 0 & \textbf{42} & 0\\
+tree, $k=3$, no merge & 1.0796 & 1.16e-2 & 1092 & 12.7\\
+tree, $k=3$, safe merge & 1.0788 & 1.95e-2 & 106 & 2.07\\
+tree, $k=3$, accumulator merge & 1.0827 & 2.40e-2 & 51 & 1.23\\
+budget $B=9$/stage & 1.0775 & 1.23e-2 & 54 & 0.66\\
+budget $B=182$/stage (= tree work) & 1.0799 & \textbf{6.6e-4} & 1092 & 0.72\\
+plain MC, $N=9$ rollouts & 1.0786 & 1.29e-2 & 54 & 0.70\\
+plain MC, $N=182$ rollouts & 1.0812 & 5.8e-4 & 1092 & 0.63\\
+\bottomrule
+\end{tabular}
+\end{center}
+All estimators are unbiased (each mean within 1.6 standard errors of 1.08).
+
+\paragraph{What this means.}
+\begin{enumerate}
+\item A fixed-$k$ tree without merging is the worst use of samples: its $k^n$ leaves share ancestors.
+\item Merging with a fixed $k$ is about $20\times$ cheaper and about $2\times$ noisier, a net $6$--$10\times$ gain.
+\item Merging with budget reallocation, at the work of the unmerged tree, gives $17\times$ lower variance and ties with
+  plain independent rollouts per unit of work.
+\item With sampling everywhere, merging cannot beat plain Monte Carlo. The engine's advantage is \textbf{exhaustive
+  expansion with merging wherever outcome sets are small}. The design for n-step methods is therefore \textbf{hybrid}:
+  enumerate small discrete draws, merge, and sample only large or continuous draws with budget reallocation.
+\end{enumerate}
+Open questions: allocation by weight or by weight $\times$ spread (Neyman allocation); effective sample size per stage;
+repeating the study with larger branching and continuous noise.
+
+%=====================================================================
+\section{Toy problems}
+\begin{center}
+\small
+\begin{tabularx}{\linewidth}{@{}p{0.7cm} p{4.0cm} Y p{2.8cm}@{}}
+\toprule
+\textbf{\#} & \textbf{Problem} & \textbf{Why} & \textbf{Ground truth}\\
+\midrule
+T1 & 19-state random walk (S\&B \S7.1) & the standard n-step TD benchmark (S\&B Fig.~7.2) & $V(s)=(s-10)/10$\\
+T2 & FrozenLake 4$\times$4 / 8$\times$8, slippery (Gymnasium) & stochastic transitions, small state space so merging is very effective; control & value iteration\\
+T3 & Blackjack (Gymnasium) & classic Monte Carlo control, discrete rewards (safe merging works) & known optimal policy\\
+T4 & Admission control / $(s,S)$ inventory with random event times (DEVS-native) & real event times, semi-MDP: where DEVS beats step-based gyms & DP on the embedded chain\\
+T5 & Finance single stock (existing port) & ties back to the Demo Deliverable; risk measures & engine exhaustive results\\
+\bottomrule
+\end{tabularx}
+\end{center}
+Order: T1 $\to$ T2 $\to$ T5 $\to$ T4; T3 optional.
+
+%=====================================================================
+\section{Python baselines}
+\begin{center}
+\small
+\begin{tabularx}{\linewidth}{@{}p{4.4cm} Y@{}}
+\toprule
+\textbf{Framework} & \textbf{Use}\\
+\midrule
+Gymnasium (Farama) & environment API; FrozenLake, Blackjack, CliffWalking built in; our DEVS environments get a Gymnasium wrapper\\
+Own tabular reference code & n-step TD, n-step SARSA, tree backup, $Q(\sigma)$ (S\&B ch.~7); transparent and the fairest baseline for T1/T2\\
+Stable-Baselines3 + sb3-contrib & PPO, DQN, A2C; QR-DQN for distributional comparison\\
+CleanRL & single-file implementations; easiest place to swap in engine-computed n-step targets\\
+optional: MCTS baseline & own UCT, or DeepMind's JAX-based \code{mctx}, for use D\\
+not now: RLlib, TorchRL, Tianshou & heavier; revisit if scale demands it\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+%=====================================================================
+\section{Connecting the Java/MS4 engine to Python}
+
+\paragraph{Two directions} (\path{Paper/DEVS-RL/DEVS-RL_Integration.png}).
+\emph{DEVS into RL}: the DEVS model is the environment and a Python agent calls \code{reset}/\code{step}; the engine
+must pause at a decision point and wait for an action, or for the policy's action probabilities to branch over.
+\emph{RL into DEVS}: the agent is a DEVS component (like \code{Trader}) whose policy is a table or, later, an exported
+network (ONNX inside Java). The second works today for tabular policies.
+
+\paragraph{A unifying library feature: decision points.} Add \code{Para.decide(label, options)}, analogous to
+\code{Para.choose}, whose law comes from a \emph{policy supplied at run time} (a table, or a callback into Python). The
+engine treats it like any draw (exhaustive, sampled or hybrid), so one mechanism covers policy evaluation, n-step
+targets and branching over actions. A Gymnasium \code{step(action)} is the special case of a policy that forces one
+action.
+
+\paragraph{Transport options.}
+\begin{center}
+\small
+\begin{tabularx}{\linewidth}{@{}p{3.6cm} Y Y@{}}
+\toprule
+\textbf{Option} & \textbf{How} & \textbf{Fit}\\
+\midrule
+1. Files (today) & policy CSV $\to$ Java $\to$ results & offline tabular evaluation only\\
+\textbf{2. JPype} (in-process) & the JVM runs inside Python (JNI); Python calls \code{ParaEngine} directly and can implement Java interfaces & \textbf{recommended first}: lowest latency, no server; verified working (Section~\ref{sec:progress})\\
+2b. Py4J & a separate JVM reached over a local socket & simpler isolation, more overhead per call\\
+3. Service & Java engine behind gRPC, REST or ZeroMQ & learners and simulators on different machines\\
+4. Message broker & MQTT, Kafka or RabbitMQ between DEVS federates and agents & distributed, real-time or multi-framework co-simulation\\
+\bottomrule
+\end{tabularx}
+\end{center}
+Recommendation: one small Python API (\code{ParaEnv} for Gymnasium plus \code{para\_eval(state, policy, n, rule)}),
+implemented first over JPype and kept independent of the transport.
+
+\paragraph{The ``online DEVS message broker''.}
+\begin{itemize}
+\item \textbf{MS4 Me's built-in collaboration service is not a broker.} Inspected locally in the MS4 Me 1.5 plugins: a
+  SOAP client for login, licences and the MS4 model store (upload, download and lock model jars).
+\item \textbf{Closest match:} Dominici, Capocchi, Santucci, Koertje, Kewley, \emph{Broker-Based Distributed DEVS
+  Simulation: Enabling Multi-Framework Interoperability through Message Broker Architecture}, SIMULTECH 2026,
+  doi:10.5220/0014846100004094. Capocchi and Santucci created DEVSimPy (Python DEVS), so this is likely the
+  Python-connectable broker remembered. Its broker technology and code availability could not be confirmed online.
+  \textbf{To do: obtain the paper.}
+\item Related: xDEVS (Java, Python, C++; distributed over sockets and, in 2025 work, MQTT); DEVS/SOA (web services).
+\item Assessment: a broker matters for real-time or multi-framework co-simulation over a network. For RL training,
+  where the learner calls the engine very often, an in-process bridge is the better first step.
+\end{itemize}
+
+%=====================================================================
+\section{Phased plan}
+\begin{center}
+\small
+\begin{tabularx}{\linewidth}{@{}p{2.3cm} Y p{4.2cm}@{}}
+\toprule
+\textbf{Phase} & \textbf{Work} & \textbf{Done when}\\
+\midrule
+R0 setup & project virtual environment; pinned gymnasium, stable-baselines3, jpype1; notebook run headless & notebook Q-table reproduced locally\\
+R1 Python prototypes & reference estimators; n-step TD on T1 with single-path, exact, sampled+merge+budget and rollout targets; then T2 & learning curves showing where model-based targets win per unit of work\\
+R2 library features & $k$-sample Monte Carlo rule; per-stage budget; accumulator merge (\emph{needs approval}); leaf-value hook; \code{Para.decide} & new Java acceptance tests pass\\
+R3 bridge & JPype \code{ParaEnv} and \code{para\_eval}; T2 through the Java engine & Java matches the Python prototype\\
+R4 baselines & T2/T5 (then T4) vs tabular code and SB3 & comparison report\\
+R5 architecture & read Dominici et al.; decide on a service or broker & decision recorded\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\decision{(1) Accumulator (expectation-only) merging as an opt-in in the Java library. Used in the Python prototypes
+for now, not added to the library. (2) JPype-first integration: being followed, since it is the recommendation.
+(3) Toy-problem order T1 $\to$ T2 $\to$ T5 $\to$ T4: being followed.}
+
+%=====================================================================
+\section{Progress}
+\label{sec:progress}
+
+\subsection{R0: environment (done 2026-10-10)}
+\begin{itemize}
+\item Virtual environment \path{rl/.venv} (Python 3.13, system site-packages for numpy). Pinned in
+  \path{rl/requirements.txt}: gymnasium 1.4.0, stable-baselines3 2.9.0, sb3-contrib 2.9.0, jpype1 1.7.1, torch 2.14.1
+  (inside the venv; the system torch 2.7 is untouched), matplotlib 3.11.2, pandas 2.3.3, numpy 2.3.4.
+\item \textbf{JPype bridge verified}: \path{rl/scratch/jpype_smoke.py} starts the JVM from Python, implements the Java
+  \code{Transducer} and \code{Supplier} interfaces in Python, runs the tutorial \code{ServiceLine} through the Java
+  \code{ParaEngine}, and gets the exact result ($P(3\text{ served})=0.36$, $P(2)=0.64$).
+\item \textbf{Q-table notebook runs headless}: \path{rl/baselines/q_table_constructor.py} ports the notebook's
+  training cells (numpy instead of torch, a seed, no Colab). Trained on \path{Train_AAPL.csv} with 15 shares it reproduces
+  the Demo's \path{Q_table_AAPL_stoch_1_15.csv} to within about 1\% per entry (buy probability in row 0: 0.792 vs 0.795;
+  the difference is the random seed). Runs in about 7 s.
+\end{itemize}
+
+\note{\textbf{Finding about the existing RL reward.} The notebook's reward is 1 when the new holding equals the
+reachable holding of largest value $\sum \text{shares}\times\text{price}$ at the current date. With positive prices that
+is always the largest share count, so the reward means ``buy'' (or hold at the cap), regardless of price movements. The
+learned policies are therefore buy-biased by construction (about 80\% buy in every row) and carry no information about
+price dynamics. For T5 the reward should be redesigned, for example as the change in portfolio value, before policies
+from it are interpreted as trading strategies.}
+
+\subsection{R1: Python reference prototypes (in progress)}
+\path{rl/paratemporal_py} implements tabular Markov reward processes and four n-step target estimators: exact
+(exhaustive expansion with merging), budgeted sampling with merging, independent rollouts, and the classic trajectory
+return. Under expectation merging the merged nodes at a stage form a weight vector over states, so the estimators are
+vectorised. \path{rl/tests/test_targets.py} checks Bellman consistency (with the true $V$, every exact n-step target
+equals $V(s)$, to $10^{-12}$), agreement with matrix powers, and unbiasedness of the sampled estimators. All pass.
+\path{paratemporal_py.frozen_lake} loads the exact slippery-FrozenLake model from Gymnasium; its exact 100-step success
+probability under the optimal policy (0.7402) matches Gymnasium's own Monte Carlo ($0.741\pm0.003$).
+
+Done: prediction studies on T1 and T2 (below). Remaining in R1: T2 control, hybrid selection, and the
+work-saturation study.
+
+\input{r1_results.tex}
+
+\end{document}
