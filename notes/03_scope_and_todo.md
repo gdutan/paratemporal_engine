@@ -61,6 +61,10 @@
       Finding: the notebook's reward amounts to "buy", independent of prices; redesign it before T5.
 - [x] R1 prediction studies on T1 and T2 (`docs/rl` PDF, Section 8). The exact target halves the error per real episode;
       merge+budget ties with rollouts; compute-competitiveness depends on frontier size.
+- [x] 2026-10-14: n-step targets in the **Java engine** (`examples.rl`): `SelectionRule.monteCarlo(k)` and `budget(B)`,
+      tabular-MDP walker ("merge, then sample"), `VerifyNStep` (22 checks), `CompareNStep` study
+      (`rl/experiments/results/java_nstep_compare.csv`). Fixed: java.util.Random seeds are now scrambled (consecutive seeds
+      were correlated and biased averages over replications). Repo: github.com/gdutan/paratemporal_engine.
 - [ ] R1 remaining: T2 control, hybrid selection, work-saturation study. Then R2 (Java features) and R3 (JPype `ParaEnv`).
 - [ ] Decisions pending: accumulator (expectation-only) merge opt-in for the Java library. JPype-first and the toy order
       are being followed as recommended.

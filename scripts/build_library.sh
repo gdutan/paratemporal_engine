@@ -44,6 +44,7 @@ declare -A TESTS=(
   [tutorial]=examples.tutorial.RunServiceLine
   [sandbox]=sandbox.RunSandbox
   [nstep]=examples.rl.VerifyNStep
+  [nstep-compare]=examples.rl.CompareNStep
 )
 ORDER=(tutorial reward finance baseball nstep)
 [ $# -gt 0 ] && ORDER=("$@")
