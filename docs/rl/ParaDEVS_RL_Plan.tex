@@ -243,9 +243,10 @@ R5 architecture & read Dominici et al.; decide on a service or broker & decision
 \end{tabularx}
 \end{center}
 
-\decision{(1) Accumulator (expectation-only) merging as an opt-in in the Java library. Used in the Python prototypes
-for now, not added to the library. (2) JPype-first integration: being followed, since it is the recommendation.
-(3) Toy-problem order T1 $\to$ T2 $\to$ T5 $\to$ T4: being followed.}
+\note{\textbf{Decisions (updated 2026-10-16).} (1) Accumulator (expectation-only) merging: \textbf{approved as an
+opt-in} for the Java library, off by default; in progress. (2) JPype-first integration: being followed. (3) Toy-problem
+order T1 $\to$ T2 $\to$ T5 $\to$ T4: being followed. (4) Control: tabular first, the learner in Python, online action
+selection first, one RL step = one decision, discounting by simulation time ($\gamma^\tau$).}
 
 %=====================================================================
 \section{Progress}
@@ -281,9 +282,12 @@ equals $V(s)$, to $10^{-12}$), agreement with matrix powers, and unbiasedness of
 \path{paratemporal_py.frozen_lake} loads the exact slippery-FrozenLake model from Gymnasium; its exact 100-step success
 probability under the optimal policy (0.7402) matches Gymnasium's own Monte Carlo ($0.741\pm0.003$).
 
-Done: prediction studies on T1 and T2 (below). Remaining in R1: T2 control, hybrid selection, and the
-work-saturation study.
+Done: prediction studies on T1 and T2 (below), repeated in the Java engine with $k$-branch sampling
+(Section~\ref{sec:java-nstep}). Remaining in R1: T2 control, hybrid selection, and the work-saturation study (both
+in progress).
 
 \input{r1_results.tex}
+
+\input{r1_java_results.tex}
 
 \end{document}

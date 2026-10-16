@@ -60,7 +60,7 @@ public class CompareNStep {
         try (PrintWriter w = new PrintWriter(Files.newBufferedWriter(out))) {
             w.println("problem,n,k,method,mean_abs_bias,mean_se,mean_variance,mean_work,efficiency_var_x_work");
             for (Row r : rows)
-                w.printf("%s,%d,%d,%s,%.6g,%.6g,%.6g,%.1f,%.6g%n", r.problem, r.n, r.k, r.method, r.bias, r.se,
+                w.printf("\"%s\",%d,%d,\"%s\",%.6g,%.6g,%.6g,%.1f,%.6g%n", r.problem, r.n, r.k, r.method, r.bias, r.se,
                     r.variance, r.work, r.efficiency);
         }
         System.out.println("wrote " + out);
