@@ -73,6 +73,16 @@
           steps. This is the main planning effort;
       (5) hybrid selection and the cost-growth study — the user asked for more detail;
       (6) `ParaEnv` plus baselines — approved, needed for full integration.
+- [x] 2026-10-16 phases 4a-4c (goal 4, engine-assisted action selection): spec `docs/rl/ParaDEVS_Control_Spec.tex`;
+      `Para.decide(label, obs, options)` (+ `Para.NOOP`, `Para.Policy`, default uniform under plain MS4); graph-mode
+      planner `paradevs.engine.{Planner, Plan, PlanSpec, LeafValues, DecisionRule}` (merge on state + decision depth,
+      rewards on edges, max / policy backups, batched leaf hook, `LookaheadPolicy` for acting); `StateKeys.relative`
+      (opt-in relative time key); `Snapshots.saveDetached`; model `examples.rl.MdpAgent`; test `VerifyControl`
+      ("control", 48 checks: n-step VI, Q, PI/VI to V*, semi-MDP, no-op, sampled bias, online FrozenLake demo).
+- [ ] 4d learning comparisons (Python, tabular); 4e Python wrapper over the planner; 4f DEVS-native problem (T4).
+- [ ] Open questions from the control spec, Section 9 (time-key default, reward timing, e(a) estimator, leaf input,
+      default policy, merging across event counts). The control spec still needs an entry in `docs/doclinks.tex` and
+      a card in `docs/ParaDEVS_Start_Here.tex`.
 - [ ] R1 remaining: T2 control, hybrid selection, work-saturation study. Then R2 (Java features) and R3 (JPype `ParaEnv`).
 - [x] 2026-10-16 decision: the accumulator (expectation-only) merge goes into the Java library as an **opt-in**, off by
       default. JPype-first and the toy order are being followed as recommended.
