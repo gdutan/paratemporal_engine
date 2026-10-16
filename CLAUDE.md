@@ -24,7 +24,9 @@ Theory authority: `C:\Users\cabre\OneDrive\Documents\Do s\documents\paratemporal
 
 ## Decisions (from the user)
 - Java on the MS4 core. Models make their draws inside transitions; the engine branches at each draw.
-- Safe merging only (full continuation key). An expectation-only merge is undecided: ask before adding it to the Java library.
+- Safe merging (full continuation key) is the default. An expectation-only (accumulator) merge is approved as an
+  explicit opt-in, off by default (decided 2026-10-16). It is exact only for linear objectives with additive rewards,
+  so it must never be the default and must refuse distribution queries.
 - Small, plug-and-play scope. Re-run all tests after any engine change.
 
 ## Conventions

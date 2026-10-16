@@ -66,8 +66,8 @@
       (`rl/experiments/results/java_nstep_compare.csv`). Fixed: java.util.Random seeds are now scrambled (consecutive seeds
       were correlated and biased averages over replications). Repo: github.com/gdutan/paratemporal_engine.
 - [ ] R1 remaining: T2 control, hybrid selection, work-saturation study. Then R2 (Java features) and R3 (JPype `ParaEnv`).
-- [ ] Decisions pending: accumulator (expectation-only) merge opt-in for the Java library. JPype-first and the toy order
-      are being followed as recommended.
+- [x] 2026-10-16 decision: the accumulator (expectation-only) merge goes into the Java library as an **opt-in**, off by
+      default. JPype-first and the toy order are being followed as recommended.
 - [ ] Read Dominici et al., SIMULTECH 2026 (broker-based multi-framework DEVS, doi:10.5220/0014846100004094)
 
 ## Phase 3: Next
