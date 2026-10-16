@@ -19,6 +19,36 @@ public interface Transducer<X> {
     /** Called once per completed departure at time t; {@code outputs} may be empty. */
     X record(X xi, double t, List<OutputEvent> outputs);
 
+    /**
+     * A transducer whose observation splits into an additive accumulated reward G and the rest,
+     * xi = (G, rest). Declaring the split is what {@link ParaSpec.Merge#EXPECTATION} requires: it
+     * joins branches whose continuation (state key, theta, j, n, rest) is identical and gives the
+     * joined branch the weight-averaged reward sum(w G) / sum(w). By linearity the expectation of
+     * any statistic affine in G is then exact; the return distribution is not.
+     *
+     * <p>Contract (the engine trusts it; it cannot check it):
+     * <ol>
+     * <li>{@code reward(withReward(xi, r)) == r}, and {@code withReward(xi, reward(xi))} equals xi.</li>
+     * <li>The reward is additive and inert: {@link #record} adds an increment that does not depend
+     *   on the reward so far, and the rest of the new observation does not depend on it either.
+     *   Formally, for every r: {@code record(withReward(xi, r), t, o)} equals
+     *   {@code withReward(record(xi, t, o), r + reward(record(xi, t, o)) - reward(xi))}.</li>
+     * <li>Nothing else reads the reward to decide the future: the acceptor, if any, must ignore it.</li>
+     * <li>{@code equals} compares the reward as a double, so {@code withReward(xi, 0.0)} is the
+     *   canonical "reward removed" form used in the merge key.</li>
+     * </ol>
+     * Discounting is allowed when the discount factor is part of the rest (e.g. gamma^steps), since
+     * the increment may depend on the rest. A transducer implementing this interface works the same
+     * as any other under {@code Merge.NONE} and {@code Merge.SAFE}.
+     */
+    interface Additive<X> extends Transducer<X> {
+        /** The accumulated additive reward G carried by xi. */
+        double reward(X xi);
+
+        /** xi with its reward replaced by r and everything else unchanged. */
+        X withReward(X xi, double r);
+    }
+
     /** The full timestamped output record. */
     static Transducer<History> history() {
         return new Transducer<History>() {

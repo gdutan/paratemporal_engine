@@ -45,8 +45,9 @@ declare -A TESTS=(
   [sandbox]=sandbox.RunSandbox
   [nstep]=examples.rl.VerifyNStep
   [nstep-compare]=examples.rl.CompareNStep
+  [expectation]=examples.rl.VerifyExpectationMerge
 )
-ORDER=(tutorial reward finance baseball nstep)
+ORDER=(tutorial reward finance baseball nstep expectation)
 [ $# -gt 0 ] && ORDER=("$@")
 
 cd "$HERE"
