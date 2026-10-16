@@ -55,10 +55,10 @@ MS4 Me jars and is run by its own task; MS4 Me integration comes later.
 | `docs/report/` | **Build report**: status, verification, problems fixed, RL results, next steps (`ParaDEVS_Build_Report.tex` and PDF) |
 | `docs/howto/` | **How-to guide and tutorial**: how to *use* the library (`ParaDEVS_HowTo.tex` and PDF) |
 | `docs/rl/ParaDEVS_RL_Plan.tex` (+ PDF) | **RL applications plan and progress**: use cases, merge-vs-variance analysis, toy problems, Python baselines, Java↔Python integration options |
-| `rl/paratemporal_py/` | Python reference prototypes: tabular MRP/MDP (incl. exact FrozenLake model), n-step target estimators, learners |
+| `rl/paratemporal_py/` | Python reference prototypes: tabular MRP/MDP (incl. exact FrozenLake model), n-step target estimators, learners; `para_env.py`: **ParaEnv** (Gymnasium env over the Java engine via JPype), `para_eval` engine targets, planner extension point (see `rl/README.md`) |
 | `rl/experiments/` | `merge_variance.py`, `t1_nstep_td.py`, `t2_frozenlake_prediction.py` (resumable), `make_tex_tables.py`; results in `results/` |
 | `rl/baselines/` | `q_table_constructor.py`: headless port of the Demo's Q-learning notebook |
-| `rl/tests/` | `test_targets.py`: estimator checks (Bellman consistency, unbiasedness) |
+| `rl/tests/` | `test_targets.py`: estimator checks (Bellman consistency, unbiasedness); `test_para_env.py`: ParaEnv vs Gymnasium, `para_eval` vs exact |
 | `rl/.venv/`, `rl/requirements.txt` | Python environment (gymnasium, stable-baselines3, sb3-contrib, jpype1, torch, matplotlib, pandas; pinned) |
 | `docs/architecture/` | **Architecture and interpretation guide**: how it is *built* and how to *read results* (`ParaDEVS_Architecture.tex` and PDF) |
 | `notes/01_baseline_and_findings.md` | What exists today, how ordinary DEVS wiring works, and what the paratemporal layer adds |
