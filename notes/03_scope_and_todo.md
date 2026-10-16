@@ -65,6 +65,14 @@
       tabular-MDP walker ("merge, then sample"), `VerifyNStep` (22 checks), `CompareNStep` study
       (`rl/experiments/results/java_nstep_compare.csv`). Fixed: java.util.Random seeds are now scrambled (consecutive seeds
       were correlated and biased averages over replications). Repo: github.com/gdutan/paratemporal_engine.
+- [ ] 2026-10-16 user selections for the next phase:
+      (1) parallelize the comparison driver — approved; the engine fast-copy change awaits the user after explanation;
+      (2) expectation-only merge as an opt-in — approved;
+      (3) add the Java results to the RL Plan PDF — approved;
+      (4) GOAL: tie the engine into a full RL pipeline that assists action selection in the value- and policy-iteration
+          steps. This is the main planning effort;
+      (5) hybrid selection and the cost-growth study — the user asked for more detail;
+      (6) `ParaEnv` plus baselines — approved, needed for full integration.
 - [ ] R1 remaining: T2 control, hybrid selection, work-saturation study. Then R2 (Java features) and R3 (JPype `ParaEnv`).
 - [x] 2026-10-16 decision: the accumulator (expectation-only) merge goes into the Java library as an **opt-in**, off by
       default. JPype-first and the toy order are being followed as recommended.
