@@ -7,6 +7,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
+import java.util.stream.IntStream;
 
 import paradevs.engine.ParaSpec;
 import paradevs.engine.SelectionRule;
@@ -28,10 +31,15 @@ import paradevs.engine.SelectionRule;
  * run, including replays), the same unit for every method. Efficiency is variance x work: for
  * unbiased estimators variance falls as 1/work, so var x work compares methods at equal compute
  * (lower is better).
+ *
+ * Replications run in parallel on -Dthreads worker threads (default: all cores). Each replication
+ * keeps its own seed and the values are summed in replication order, so the results are identical
+ * for any thread count.
  */
 public class CompareNStep {
 
     static final int REPS = Integer.getInteger("reps", 200);
+    static final ForkJoinPool POOL = new ForkJoinPool(Integer.getInteger("threads", Runtime.getRuntime().availableProcessors()));
     static final int[] NS = {2, 4, 6};
     static final int[] KS = {2, 3};
 
@@ -76,18 +84,26 @@ public class CompareNStep {
         }
     }
 
+    /** Runs replications 0..reps-1 on the worker pool; element i is replication i. */
+    static NStepTargets.Estimate[] replicate(int reps, java.util.function.IntFunction<NStepTargets.Estimate> one) {
+        try {
+            return POOL.submit(() -> IntStream.range(0, reps).parallel().mapToObj(one)
+                .toArray(NStepTargets.Estimate[]::new)).get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new IllegalStateException("Replication failed", e);
+        }
+    }
+
     /** Runs one method from every start state and records the averages over start states. */
     static void add(List<Row> rows, String name, int n, int k, String method, TabularMdp mdp, double[] v,
                     int[] starts, int steps, SelectionRule rule, ParaSpec.Merge merge, int roots, int reps) {
         double bias = 0, se = 0, var = 0, work = 0, eff = 0;
         for (int s : starts) {
             double exact = v[s];
+            NStepTargets.Estimate[] est = replicate(reps, i -> NStepTargets.target(mdp, s, steps, v, MdpWalker.Mode.JOINT,
+                rule, merge, roots, 1_000_000L * s + 1000L * steps + i));
             double sum = 0, sq = 0, wsum = 0;
-            for (int i = 0; i < reps; i++) {
-                NStepTargets.Estimate e = NStepTargets.target(mdp, s, steps, v, MdpWalker.Mode.JOINT, rule, merge, roots,
-                    1_000_000L * s + 1000L * steps + i);
-                sum += e.value; sq += e.value * e.value; wsum += e.departures;
-            }
+            for (NStepTargets.Estimate e : est) { sum += e.value; sq += e.value * e.value; wsum += e.departures; }
             double mean = sum / reps;
             double vs = reps > 1 ? Math.max(0, (sq - reps * mean * mean) / (reps - 1)) : 0;
             double ws = wsum / reps;
