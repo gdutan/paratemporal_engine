@@ -16,8 +16,8 @@ Theory authority: `C:\Users\cabre\OneDrive\Documents\Do s\documents\paratemporal
 (`main_paratemporal.tex`, `Paratemporal_Adaptation.tex`). `Main_Sol_Base` is out of scope.
 
 ## Build and test
-- `bash scripts/build_library.sh` builds the library and runs all acceptance tests (99 checks, all must pass).
-- `bash scripts/build_library.sh <test>` runs one test: tutorial | reward | finance | baseball | nstep | nstep-compare | sandbox | plain.
+- `bash scripts/build_library.sh` builds the library and runs all acceptance tests (147 checks, all must pass).
+- `bash scripts/build_library.sh <test>` runs one test: tutorial | reward | finance | baseball | nstep | control | nstep-compare | sandbox | plain.
 - `bash scripts/build_docs.sh` rebuilds every PDF and refreshes the cross-document links.
 - Python: `rl/.venv/Scripts/python.exe` (pinned in `rl/requirements.txt`; the venv is gitignored).
 - Use Git Bash, JDK 17+, and MiKTeX (`latexmk`). The MS4 core comes from `../Demo Deliverable` when present, and from `lib/ms4-core.jar` otherwise.

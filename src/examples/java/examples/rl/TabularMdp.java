@@ -115,13 +115,63 @@ public final class TabularMdp {
         return v;
     }
 
-    private double q(double[] v, int s, int a) {
+    private double q(double[] v, int s, int a) { return q(v, s, a, gamma); }
+
+    /**
+     * Q(s,a) = sum_s' P(s'|s,a) (r(s') + beta V(s')), V = 0 at terminal states. beta is the
+     * discount of one step: gamma for unit steps, E[gamma^tau] for a random duration tau drawn
+     * independently of s' (semi-MDP).
+     */
+    public double q(double[] v, int s, int a, double beta) {
         double x = 0;
         for (int s2 = 0; s2 < nS; s2++) {
             double pr = p[s][a][s2];
-            if (pr > 0) x += pr * (reward[s2] + gamma * (terminal[s2] ? 0 : v[s2]));
+            if (pr > 0) x += pr * (reward[s2] + beta * (terminal[s2] ? 0 : v[s2]));
         }
         return x;
+    }
+
+    /** Finite-horizon value iteration: n Bellman-optimality steps from v0 (V_n = T^n v0), discount beta per step. */
+    public double[] valueIterationSteps(int n, double[] v0, double beta) {
+        double[] v = v0.clone();
+        for (int k = 0; k < n; k++) {
+            double[] v2 = new double[nS];
+            for (int s = 0; s < nS; s++) {
+                if (terminal[s]) continue;
+                double best = Double.NEGATIVE_INFINITY;
+                for (int a = 0; a < nA; a++) best = Math.max(best, q(v, s, a, beta));
+                v2[s] = best;
+            }
+            v = v2;
+        }
+        return v;
+    }
+
+    /** The evaluated policy pi[s][a] (live array). */
+    public double[][] policy() { return pi; }
+
+    /** Replace the evaluated policy. */
+    public TabularMdp setPolicy(double[][] newPi) {
+        for (int s = 0; s < nS; s++) pi[s] = newPi[s].clone();
+        return this;
+    }
+
+    /**
+     * The same MDP with one extra action nA, "stay": the state is unchanged and the reward is 0
+     * (matching {@link MdpAgent}'s no-op; terminal-only rewards are assumed).
+     */
+    public static TabularMdp withNoop(TabularMdp m) {
+        int nA2 = m.nA + 1;
+        double[][][] p2 = new double[m.nS][nA2][];
+        for (int s = 0; s < m.nS; s++) {
+            for (int a = 0; a < m.nA; a++) p2[s][a] = m.p[s][a].clone();
+            p2[s][m.nA] = new double[m.nS];
+            if (!m.terminal[s]) {
+                if (m.reward[s] != 0) throw new IllegalArgumentException("withNoop assumes zero reward in non-terminal states");
+                p2[s][m.nA][s] = 1;
+            }
+        }
+        return new TabularMdp(m.name + "+noop", p2, m.reward.clone(), m.terminal.clone(), m.gamma, m.start);
     }
 
     /** Set pi to the epsilon-soft greedy policy for V* (ties to the lowest action, as numpy argmax). */

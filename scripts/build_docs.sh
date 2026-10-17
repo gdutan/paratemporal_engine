@@ -25,3 +25,4 @@ build report       ParaDEVS_Build_Report.tex
 build howto        ParaDEVS_HowTo.tex
 build architecture ParaDEVS_Architecture.tex
 build rl           ParaDEVS_RL_Plan.tex
+build rl           ParaDEVS_Control_Spec.tex

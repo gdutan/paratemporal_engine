@@ -45,21 +45,41 @@ public final class StateKeys {
 
     public static Object of(AtomicModel model) {
         List<Object> key = new ArrayList<>();
-        collect(model, key);
+        collect(model, key, null, true);
         return key;
     }
 
-    private static void collect(AtomicModel m, List<Object> key) {
+    /**
+     * The key with event times taken relative to {@code now}, for time-homogeneous models (used by
+     * the graph planner). Each atomic model contributes its time to the next event, tN - now. A
+     * component of a coupled model also contributes its elapsed time, now - tL, since an input can
+     * reach it and its external transition sees the elapsed time. A top-level atomic model receives
+     * no inputs under the planner, so its elapsed time cannot affect its future and is left out.
+     * Model fields are included exactly as in {@link #of}, so a field holding an absolute time still
+     * prevents merges across times (safe).
+     */
+    public static Object relative(AtomicModel model, double now) {
+        List<Object> key = new ArrayList<>();
+        collect(model, key, now, true);
+        return key;
+    }
+
+    private static void collect(AtomicModel m, List<Object> key, Double now, boolean top) {
         if (m instanceof CoupledModelImpl) {
             key.add("coupled:" + m.getName());
-            for (AtomicModel c : ((CoupledModelImpl) m).getChildren()) collect(c, key);
+            for (AtomicModel c : ((CoupledModelImpl) m).getChildren()) collect(c, key, now, false);
             return;
         }
         key.add(m.getClass().getName());
         key.add(m.getName());
         Simulator s = m.getSimulator();
-        key.add(s.getLastEventTime());
-        key.add(s.getNextEventTime());
+        if (now == null) {
+            key.add(s.getLastEventTime());
+            key.add(s.getNextEventTime());
+        } else {
+            key.add(s.getNextEventTime() - now);
+            if (!top) key.add(now - s.getLastEventTime());
+        }
         if (m instanceof ParaStateKey) { key.add(canonical(((ParaStateKey) m).paraStateKey())); return; }
         for (Class<?> c = m.getClass(); c != null && c != AtomicModelImpl.class && c != Object.class; c = c.getSuperclass()) {
             for (Field f : c.getDeclaredFields()) {
