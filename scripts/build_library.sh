@@ -48,8 +48,9 @@ declare -A TESTS=(
   [hybrid]=examples.rl.VerifyHybrid
   [hybrid-compare]=examples.rl.CompareHybrid
   [cost-growth]=examples.rl.CostGrowth
+  [expectation]=examples.rl.VerifyExpectationMerge
 )
-ORDER=(tutorial reward finance baseball nstep hybrid)
+ORDER=(tutorial reward finance baseball nstep hybrid expectation)
 [ $# -gt 0 ] && ORDER=("$@")
 
 cd "$HERE"

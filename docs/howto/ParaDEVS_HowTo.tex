@@ -214,6 +214,7 @@ Transducer & Folds the top model's \emph{outputs} into the observation $\xi$ (e.
 Stop rules & A branch ends at the \emph{horizon} (entry count $m$), when an \emph{acceptor} returns true, or when it is \emph{passive} (no event scheduled and no inputs left).\\
 Selection rule & What to do at a draw: \emph{exhaustive} (all outcomes), \emph{Monte Carlo} (one sampled outcome), \emph{partial} (outcomes above a threshold), or \emph{hybrid} (a rule per label).\\
 Safe merge & Two new branches with identical complete state and identical $\xi$ are combined, and their weights added. This never changes the result.\\
+Expectation-only merge & Opt-in (\code{Merge.EXPECTATION}): branches identical except for an additive accumulated reward are combined, with the weight-averaged reward. Expectations stay exact; the reward distribution is lost.\\
 Residual & Probability left unexplored by partial selection. True probabilities lie between the result and result $+$ residual.\\
 \bottomrule
 \end{tabularx}
@@ -517,8 +518,9 @@ ParaSpec.of(factory, transducer) & Model factory and observation (required).\\
 .horizon(m) & Stop at the $m$-th persistent entry; the initial state is entry 1 (no limit).\\
 .acceptor((xi, t, n) -> boolean) & Extra stopping rule on observation, time, entry count (none).\\
 .selection(SelectionRule) & \code{exhaustive()} (default), \code{monteCarlo()}, \code{partialExhaustive(p)}, \code{hybrid(map, other)}.\\
-.roots(N) & $N$ starting copies of weight $1/N$; use with Monte Carlo (1). Not combinable with safe merging (refused).\\
+.roots(N) & $N$ starting copies of weight $1/N$; use with Monte Carlo (1). Not combinable with merging (refused).\\
 .merge(ParaSpec.Merge.SAFE) & Merge identical new branches (\code{NONE}).\\
+.merge(ParaSpec.Merge.EXPECTATION) & Opt-in: merge branches that differ only in an additive reward (needs \code{Transducer.Additive}; see below).\\
 .seed(s) & Seed for sampled selection (1).\\
 .maxLive(n) & Abort if more than $n$ branches are live (5{,}000{,}000).\\
 \bottomrule
@@ -527,6 +529,20 @@ ParaSpec.of(factory, transducer) & Model factory and observation (required).\\
 \code{InputTrace.builder().at(time, port, value)...build()}: messages at the same time are delivered together.
 \code{Transducer.history()} records every output with its time; write your own (Tutorial 1) to keep a smaller summary,
 which also merges better.
+
+\paragraph{Expectation-only merging.} When the result is an expectation of an accumulated reward (an n-step target, an
+expected discounted payoff), returns that differ along paths keep safe merging from firing. Declare the reward part of
+$\xi$ by implementing \code{Transducer.Additive} (\code{reward(xi)} and \code{withReward(xi, r)}) and opt in:
+\begin{lstlisting}
+ParaSpec.of(model, returns).merge(ParaSpec.Merge.EXPECTATION);   // off by default
+double target = result.expectation(x -> 1.0, x -> x.disc * v[x.state]);   // E[G + disc V(s)]
+\end{lstlisting}
+Branches equal in everything except the reward are combined, with the summed weight and the weight-averaged reward.
+This is exact for any $E[a(\text{rest})\,G+b(\text{rest})]$ but loses the distribution of $G$, so the result then refuses
+\code{distribution()}, \code{marginal(g)} and \code{expectation(f)}. The reward must be additive: what a step adds to it,
+and the rest of $\xi$, must not depend on the reward so far. On a random walk with a reward on every step
+(\code{VerifyExpectationMerge}, $n=10$), it keeps 18 leaves and 274 departures, against 274 and 1796 with safe merging
+and 1010 and 4038 without merging, all with the same target.
 
 \subsection{Results: \code{ParaResult}}
 \begin{center}
@@ -537,6 +553,7 @@ which also merges better.
 distribution() & Map from (observation $\xi$, stop status) to total weight.\\
 expectation(f) & $\sum w\,f(\xi)$: expected value of a function of the observation.\\
 marginal(g) & Distribution of $g(\xi)$, with weights of equal images summed.\\
+expectation(slope, offset) & $\sum w\,(\text{slope}(\text{rest})\,G+\text{offset}(\text{rest}))$ for a \code{Transducer.Additive}; the only form (with \code{expectedReward()}) allowed after \code{Merge.EXPECTATION}.\\
 totalMass() & Sum of weights; 1 for exhaustive runs with proper laws.\\
 residual() & Omitted probability from partial selection.\\
 stats() & \code{leaves} (finished branches), \code{choiceNodes} (draws expanded), \code{departures} (event runs incl.\ replays), \code{merged}, \code{maxLive}, \code{ms}.\\

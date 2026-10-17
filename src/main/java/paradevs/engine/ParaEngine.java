@@ -34,10 +34,13 @@ public final class ParaEngine {
     private ParaEngine() {}
 
     public static <X> ParaResult<X> run(ParaSpec<X> spec) {
-        if (spec.roots > 1 && spec.merge == ParaSpec.Merge.SAFE)
-            throw new IllegalArgumentException("Safe merging with " + spec.roots + " roots would merge the independent "
+        if (spec.roots > 1 && spec.merge != ParaSpec.Merge.NONE)
+            throw new IllegalArgumentException((spec.merge == ParaSpec.Merge.SAFE ? "Safe" : "Expectation-only")
+                + " merging with " + spec.roots + " roots would merge the independent "
                 + "Monte Carlo samples into one path (the expectation is preserved, but the estimate collapses). "
                 + "Use Merge.NONE with Monte Carlo roots.");
+        if (spec.merge == ParaSpec.Merge.EXPECTATION && !(spec.transducer instanceof Transducer.Additive))
+            throw new IllegalArgumentException("Merge.EXPECTATION needs a Transducer.Additive");   // ParaSpec.merge already refuses
         return new Run<>(spec).execute();
     }
 
@@ -48,7 +51,7 @@ public final class ParaEngine {
     /** Persistent branch record k = (eta, t, theta, j, n, xi, w); eta is held as bytes. */
     static final class Branch<X> {
         final byte[] state;
-        final Object stateKey;   // only under SAFE merging
+        final Object stateKey;   // only under SAFE or EXPECTATION merging
         final double theta;      // time of the latest persistent entry
         final double tN;         // absolute next internal event time of the model
         final int j, n;
@@ -59,6 +62,7 @@ public final class ParaEngine {
             this.j = j; this.n = n; this.xi = xi; this.w = w;
         }
         Branch<X> withWeight(double w2) { return new Branch<>(state, stateKey, theta, tN, j, n, xi, w2); }
+        Branch<X> with(X xi2, double w2) { return new Branch<>(state, stateKey, theta, tN, j, n, xi2, w2); }
     }
 
     /** A departure suspended at a choice point (the payload rho of a choice request). */
@@ -93,12 +97,15 @@ public final class ParaEngine {
 
     static final class Run<X> {
         final ParaSpec<X> spec;
-        final ParaResult<X> result = new ParaResult<>();
+        final ParaResult<X> result;
         final Random rng;
         final TreeMap<Long, Branch<X>> live = new TreeMap<>();   // L, iterated in name order
         long nextName = 0;
 
-        Run(ParaSpec<X> spec) { this.spec = spec; this.rng = new Random(scramble(spec.seed)); }
+        Run(ParaSpec<X> spec) {
+            this.spec = spec; this.rng = new Random(scramble(spec.seed));
+            this.result = new ParaResult<>(spec.transducer, spec.merge);
+        }
 
         /**
          * SplitMix64 finalizer. java.util.Random gives nearly equal first values for nearby seeds
@@ -253,7 +260,7 @@ public final class ParaEngine {
                     + " supplied values; the departure is not deterministic in its state");
             int j2 = (kind == Kind.EXTERNAL || kind == Kind.CONFLUENT) ? parent.j + 1 : parent.j;
             X xi2 = spec.transducer.record(parent.xi, t, outputs);
-            Object key = spec.merge == ParaSpec.Merge.SAFE ? StateKeys.of(model) : null;
+            Object key = spec.merge != ParaSpec.Merge.NONE ? StateKeys.of(model) : null;
             return new Local<>(new Branch<>(Snapshots.save(model), key, t, node.tN(), j2, parent.n + 1, xi2, w), null);
         }
 
@@ -285,6 +292,7 @@ public final class ParaEngine {
         /** MM: replace equal complete-continuation keys by one record with the summed weight. */
         List<Branch<X>> merge(List<Branch<X>> children) {
             if (spec.merge == ParaSpec.Merge.NONE || children.size() < 2) return children;
+            if (spec.merge == ParaSpec.Merge.EXPECTATION) return mergeExpectation(children);
             Map<List<Object>, Branch<X>> groups = new LinkedHashMap<>();
             for (Branch<X> k : children) {
                 List<Object> key = java.util.Arrays.asList(k.stateKey, k.theta, k.j, k.n, k.xi);
@@ -293,6 +301,31 @@ public final class ParaEngine {
                 else { groups.put(key, prev.withWeight(prev.w + k.w)); result.stats.merged++; }
             }
             return new ArrayList<>(groups.values());
+        }
+
+        /**
+         * Expectation-only MM: group by (state key, theta, j, n, xi with the reward zeroed); the
+         * joined record has W = sum w and reward A / W, A = sum w G. A singleton group keeps its
+         * record unchanged. Exact for E[a(rest) G + b(rest)] by linearity: the members share the
+         * continuation, and the reward is additive and inert (Transducer.Additive contract).
+         */
+        @SuppressWarnings("unchecked")
+        List<Branch<X>> mergeExpectation(List<Branch<X>> children) {
+            Transducer.Additive<X> add = (Transducer.Additive<X>) spec.transducer;
+            final class Group { Branch<X> first; X rest; double w, a; int size; }
+            Map<List<Object>, Group> groups = new LinkedHashMap<>();
+            for (Branch<X> k : children) {
+                X rest = add.withReward(k.xi, 0.0);
+                List<Object> key = java.util.Arrays.asList(k.stateKey, k.theta, k.j, k.n, rest);
+                Group g = groups.get(key);
+                if (g == null) { g = new Group(); g.first = k; g.rest = rest; groups.put(key, g); }
+                else result.stats.merged++;
+                g.w += k.w; g.a += k.w * add.reward(k.xi); g.size++;
+            }
+            List<Branch<X>> out = new ArrayList<>(groups.size());
+            for (Group g : groups.values())
+                out.add(g.size == 1 ? g.first : g.first.with(add.withReward(g.rest, g.a / g.w), g.w));
+            return out;
         }
     }
 }

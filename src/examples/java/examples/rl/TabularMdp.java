@@ -149,6 +149,17 @@ public final class TabularMdp {
         return new TabularMdp("randomWalk19", p, r, term, 1.0, 10);
     }
 
+    /**
+     * A copy of this MDP (same dynamics and terminals, uniform policy) registered as {@code newName},
+     * with reward(s') + bonus[s'] on arrival in s'. Used for per-step rewards that make returns
+     * differ between paths, so that safe merging rarely fires.
+     */
+    public TabularMdp withArrivalBonus(String newName, double[] bonus) {
+        double[] r = reward.clone();
+        for (int s = 0; s < nS; s++) r[s] += bonus[s];
+        return new TabularMdp(newName, p, r, terminal, gamma, start);
+    }
+
     static final String[] FROZEN_LAKE_8X8 = {
         "SFFFFFFF", "FFFFFFFF", "FFFHFFFF", "FFFFFHFF",
         "FFFHFFFF", "FHHFFFHF", "FHFFHFHF", "FFFHFFFG" };

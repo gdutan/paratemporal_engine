@@ -394,6 +394,19 @@ $(\text{state key}, \theta, j, n, \xi)$. Each group is replaced by its first mem
 complete continuation key of the paper's Proposition ``Safe merging'', and merging stays local to the update, as the
 paper prescribes.
 
+\paragraph{Expectation-only merging (opt-in).} \code{Merge.EXPECTATION} is off by default and needs a transducer that
+implements \code{Transducer.Additive}, which splits $\xi=(G,\text{rest})$ into an additive accumulated reward
+$G=\code{reward}(\xi)$ and the rest, with \code{withReward}$(\xi,r)$ replacing $G$. The key is
+$(\text{state key}, \theta, j, n, \text{rest})$, with the reward zeroed. A group of weights $w_i$ and rewards $G_i$ becomes one
+record of weight $W=\sum_i w_i$ and reward $A/W$, $A=\sum_i w_i G_i$. The members share their future, so by linearity
+$E[G]=\sum_s A_s+\sum_s W_s\,E[G_{\text{future}}\mid s]$ is unchanged, and so is $E[a(\text{rest})\,G+b(\text{rest})]$ for
+any functions $a$, $b$. The law of $G$ is lost. The result therefore refuses \code{distribution()}, \code{marginal(g)} and
+the general \code{expectation(f)} with an \code{IllegalStateException}, and answers \code{expectation(slope, offset)}, which
+evaluates $\sum w\,(\text{slope}(\text{rest})\,G+\text{offset}(\text{rest}))$, and \code{expectedReward()}. Both functions
+receive only the rest, so the rule holds by construction. The transducer's contract: the increment that \code{record} adds
+to $G$, and the new rest, do not depend on $G$, and the acceptor ignores $G$. The mode is valid only for linear objectives
+with additive rewards; it is refused without \code{Additive} and with $N>1$ roots.
+
 %=====================================================================
 \section{Interpreting results}
 
@@ -448,7 +461,7 @@ Both change the question slightly; record which one you used.
 leaves & Terminal branches collected (before equal outcomes are summed). \code{distribution().size()} is the number of distinct outcomes.\\
 choiceNodes & Non-degenerate draws expanded (the paper's ``random choice nodes'').\\
 departures & Event runs including replays: the main cost driver.\\
-merged & Branches absorbed by safe merging.\\
+merged & Branches absorbed by merging (safe or expectation-only).\\
 maxLive & Largest number of simultaneously live branches: the memory driver.\\
 \bottomrule
 \end{tabularx}
@@ -480,7 +493,7 @@ the information a merge would lose.
 \item \textbf{Safe merging finds nothing when times differ.} Branches that reach the same state at different times
   (e.g.\ random service durations) are different continuations and are correctly kept apart.
 \end{itemize}
-\warn{Monte Carlo with $N>1$ roots and \code{Merge.SAFE} is refused by the engine. The roots start identical, so merging
+\warn{Monte Carlo with $N>1$ roots and \code{Merge.SAFE} (or \code{Merge.EXPECTATION}) is refused by the engine. The roots start identical, so merging
 would collapse the independent samples into one path. The expectation is preserved, as the theory says, but the
 estimate becomes a single trajectory. Use \code{Merge.NONE} with Monte Carlo.}
 
@@ -498,6 +511,7 @@ Exact law, mass 1, finite run & main\_paratemporal, Theorem ``Exact exhaustive r
 Unbiased estimates & main\_paratemporal eq.\ (unbiased); Adaptation Prop.\ ``Unbiasedness of sampled and hybrid expansion'' & Monte Carlo, hybrid, or importance factors; $N$ roots of weight $1/N$; no merging\\
 Residual bounds & eq.\ (residual), Adaptation Prop.\ ``Truncation bounds'' & partial exhaustive selection\\
 Merging changes nothing & Proposition ``Safe merging'' & exhaustive selection; complete key (Section 3.4); refused with $N>1$ sampled roots\\
+Expectation-only merging keeps expectations & linearity (RL plan, Section ``Monte Carlo at every stage'') & \code{Merge.EXPECTATION}; additive, inert reward (\code{Transducer.Additive}); statistics affine in the reward only; distribution queries refused\\
 Order independence & Adaptation Prop.\ ``Independence from the advancement order'' & always (and the engine's order is fixed anyway)\\
 Correct restart from a copy & Adaptation Prop.\ ``Restart sufficiency'' & the whole model state is serializable; no hidden external state\\
 \bottomrule
