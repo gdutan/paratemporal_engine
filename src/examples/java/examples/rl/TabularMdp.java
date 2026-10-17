@@ -239,4 +239,40 @@ public final class TabularMdp {
         }
         return new TabularMdp("frozenLake8x8", p, r, term, gamma, 0);
     }
+
+    // ------------------------------------------------------------------ access for bridges (examples.rl.env)
+
+    /**
+     * A copy registered under {@code newName}: same (shared, read-only) tables, its own policy. Lets
+     * several sessions evaluate different policies on one problem without clashing in the registry.
+     */
+    public TabularMdp copy(String newName) {
+        TabularMdp m = new TabularMdp(newName, p, reward, terminal, gamma, start);
+        for (int s = 0; s < nS; s++) m.pi[s] = pi[s].clone();
+        return m;
+    }
+
+    /** Remove a registered MDP (e.g. a session copy that is no longer used). */
+    public static void unregister(String name) { REGISTRY.remove(name); }
+
+    /** P(s'|s,a). */
+    public double transitionProb(int s, int a, int s2) { return p[s][a][s2]; }
+
+    /** pi(a|s). */
+    public double policyProb(int s, int a) { return pi[s][a]; }
+
+    /** Replace the evaluated policy; each row must be a probability vector over the nA actions. */
+    public TabularMdp setPolicy(double[][] newPi) {
+        if (newPi.length != nS) throw new IllegalArgumentException("policy needs " + nS + " rows");
+        double[][] q = new double[nS][];
+        for (int s = 0; s < nS; s++) {
+            if (newPi[s].length != nA) throw new IllegalArgumentException("policy rows need " + nA + " entries");
+            double sum = 0;
+            for (double x : newPi[s]) { if (x < 0) throw new IllegalArgumentException("negative probability"); sum += x; }
+            if (Math.abs(sum - 1) > Law.MASS_TOLERANCE) throw new IllegalArgumentException("row " + s + " sums to " + sum);
+            q[s] = newPi[s].clone();
+        }
+        pi = q;
+        return this;
+    }
 }

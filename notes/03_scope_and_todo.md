@@ -86,6 +86,10 @@
 - [ ] R1 remaining: T2 control, hybrid selection, work-saturation study. Then R2 (Java features) and R3 (JPype `ParaEnv`).
 - [x] 2026-10-16 decision: the accumulator (expectation-only) merge goes into the Java library as an **opt-in**, off by
       default. JPype-first and the toy order are being followed as recommended.
+- [x] 2026-10-16: **ParaEnv** (R3 first cut): `examples.rl.env.MdpSession` (Java bridge: reset/step with SplitMix64,
+      snapshot, `NStepTargets` targets, batch methods, `ActionPlanner` extension point with `PolicyLookaheadPlanner`);
+      `rl/paratemporal_py/para_env.py` (Gymnasium env, `para_eval`, `plan`); `rl/tests/test_para_env.py`;
+      `rl/experiments/paraenv_ntd_demo.py`. OpenEnv/TRL adapter: path described in `rl/README.md`, not built.
 - [ ] Read Dominici et al., SIMULTECH 2026 (broker-based multi-framework DEVS, doi:10.5220/0014846100004094)
 
 ## Phase 3: Next
