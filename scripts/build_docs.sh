@@ -26,3 +26,5 @@ build howto        ParaDEVS_HowTo.tex
 build architecture ParaDEVS_Architecture.tex
 build rl           ParaDEVS_RL_Plan.tex
 build rl           ParaDEVS_Control_Spec.tex
+build rl           ParaDEVS_Hybrid_Study.tex
+build engine       ParaDEVS_FastCopy_Proposal.tex

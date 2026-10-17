@@ -9,15 +9,21 @@ also an RL track that uses the engine to compute n-step targets.
 1. `README.md`: layout and build commands.
 2. `docs/report/ParaDEVS_Build_Report.tex`: what exists, how it was verified, problems fixed, and next steps. Section 1 is a one-page summary.
 3. `notes/03_scope_and_todo.md`: decision log and current to-do list. Keep it updated.
-4. `docs/rl/ParaDEVS_RL_Plan.tex` and `docs/rl/r1_results.tex`: the RL plan and its results.
-5. Latest work: `src/examples/java/examples/rl/` and `rl/experiments/results/java_nstep_compare.csv`.
+4. `docs/rl/ParaDEVS_RL_Plan.tex` (with `r1_results.tex` and `r1_java_results.tex`): the RL plan and its results.
+5. `docs/rl/ParaDEVS_Control_Spec.tex`: engine-assisted action selection (`Para.decide`, the graph-mode planner in
+   `paradevs.engine.Planner/Plan/PlanSpec`), phases 4a-4f. This is the current main thread of work.
+6. `docs/rl/ParaDEVS_Hybrid_Study.tex` (which draws to enumerate or sample) and
+   `docs/engine/ParaDEVS_FastCopy_Proposal.tex` (engine speed-up, awaiting the user's decision).
+7. Python side: `rl/README.md`, `rl/paratemporal_py/para_env.py` (Gymnasium `ParaEnv` over the Java engine).
 
 Theory authority: `C:\Users\cabre\OneDrive\Documents\Do s\documents\paratemporal\`
 (`main_paratemporal.tex`, `Paratemporal_Adaptation.tex`). `Main_Sol_Base` is out of scope.
 
 ## Build and test
-- `bash scripts/build_library.sh` builds the library and runs all acceptance tests (147 checks, all must pass).
-- `bash scripts/build_library.sh <test>` runs one test: tutorial | reward | finance | baseball | nstep | control | nstep-compare | sandbox | plain.
+- `bash scripts/build_library.sh` builds the library and runs all acceptance tests (197 checks, all must pass).
+- `bash scripts/build_library.sh <test>` runs one test: tutorial | reward | finance | baseball | nstep | hybrid |
+  expectation | control | sandbox | plain. Studies (slow): nstep-compare | hybrid-compare | cost-growth.
+- Python tests: `rl/.venv/Scripts/python.exe rl/tests/test_targets.py` and `rl/tests/test_para_env.py` (needs a build first).
 - `bash scripts/build_docs.sh` rebuilds every PDF and refreshes the cross-document links.
 - Python: `rl/.venv/Scripts/python.exe` (pinned in `rl/requirements.txt`; the venv is gitignored).
 - Use Git Bash, JDK 17+, and MiKTeX (`latexmk`). The MS4 core comes from `../Demo Deliverable` when present, and from `lib/ms4-core.jar` otherwise.

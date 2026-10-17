@@ -109,11 +109,26 @@ model (what to bring over and the two edits needed); API reference; troubleshoot
 merging and why it is safe; how to read results under each selection rule; which theory guarantees hold; extension
 points.}
 
-\card{rl/ParaDEVS_RL_Plan.pdf}{RL Applications Plan and Progress}{9 pages}
+\card{rl/ParaDEVS_RL_Plan.pdf}{RL Applications Plan and Progress}{11 pages}
 {you are interested in reinforcement learning with the paratemporal engine.}
 {where paratemporal fits in RL; Monte Carlo sampling with merging and its effect on variance; toy problems; Python
 baselines; options for connecting Java/MS4 to Python (including a DEVS message broker); phased plan R0--R5;
-progress and results so far.}
+progress and results so far, including the Java engine's n-step results with $k$ branches.}
+
+\card{rl/ParaDEVS_Control_Spec.pdf}{Control Spec: action selection with the engine}{12 pages}
+{you want to know how the engine chooses actions for value iteration, policy iteration and online control.}
+{decision epochs and \texttt{Para.decide}; graph-mode planning (forward expansion, backward pass with max or policy
+average); discounting by simulation time; guarantees and the bias of sampled maxima; the API; phase plan 4a--4f.}
+
+\card{rl/ParaDEVS_Hybrid_Study.pdf}{Hybrid Selection and Cost-Growth Study}{17 pages}
+{you want to choose which random draws to enumerate and which to sample, or how deep a lookahead can go.}
+{what hybrid selection is; FrozenLake results per configuration; where the variance comes from; how work grows with
+lookahead, with and without merging; when exact expansion beats sampling; a rule of thumb.}
+
+\card{engine/ParaDEVS_FastCopy_Proposal.pdf}{Engine Fast-Copy Proposal}{15 pages}
+{you want to understand why the engine replays steps, where its time goes, and how to make it faster.}
+{why a half-finished step cannot be reused; a profile of each step; measured speed-ups of each option; the
+verification safeguard; a phased recommendation with decisions for you.}
 
 %=====================================================================
 \section*{4.\quad Other material}

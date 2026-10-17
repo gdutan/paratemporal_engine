@@ -81,9 +81,18 @@
       ("control", 48 checks: n-step VI, Q, PI/VI to V*, semi-MDP, no-op, sampled bias, online FrozenLake demo).
 - [ ] 4d learning comparisons (Python, tabular); 4e Python wrapper over the planner; 4f DEVS-native problem (T4).
 - [ ] Open questions from the control spec, Section 9 (time-key default, reward timing, e(a) estimator, leaf input,
-      default policy, merging across event counts). The control spec still needs an entry in `docs/doclinks.tex` and
-      a card in `docs/ParaDEVS_Start_Here.tex`.
-- [ ] R1 remaining: T2 control, hybrid selection, work-saturation study. Then R2 (Java features) and R3 (JPype `ParaEnv`).
+      default policy, merging across event counts).
+- [x] 2026-10-16: **expectation-only merge** (`Merge.EXPECTATION`, `Transducer.Additive`, result refuses distribution
+      queries; `expectation(slope, offset)`); test `expectation` (38 checks).
+- [x] 2026-10-16: **hybrid + cost-growth study** (`docs/rl/ParaDEVS_Hybrid_Study.tex`): sample the action, enumerate the
+      slip, with budget + merge wins (1.3-2.9x over the best one-draw sampler); the slip carries 88% of the variance;
+      merged exhaustive work becomes linear in n once the reachable set is covered; observation-lag finding
+      (`LagFreeWalker`, up to 2.8x less work); test `hybrid` (12 checks).
+- [ ] **Engine fast-copy**: proposal `docs/engine/ParaDEVS_FastCopy_Proposal.tex` (measured 15-40x options). Waiting on
+      the user to read it and decide (Phase 1 default or opt-in; `ParaCopyable` public; new MC random stream; verify mode
+      in tests).
+- [x] 2026-10-17: all five branches merged into main; documents registered in `docs/doclinks.tex` and Start Here.
+- [ ] R1 remaining: T2 control (now via the planner, phase 4d). Then R2 (Java features).
 - [x] 2026-10-16 decision: the accumulator (expectation-only) merge goes into the Java library as an **opt-in**, off by
       default. JPype-first and the toy order are being followed as recommended.
 - [x] 2026-10-16: **ParaEnv** (R3 first cut): `examples.rl.env.MdpSession` (Java bridge: reset/step with SplitMix64,

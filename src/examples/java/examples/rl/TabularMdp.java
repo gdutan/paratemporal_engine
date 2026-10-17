@@ -150,12 +150,6 @@ public final class TabularMdp {
     /** The evaluated policy pi[s][a] (live array). */
     public double[][] policy() { return pi; }
 
-    /** Replace the evaluated policy. */
-    public TabularMdp setPolicy(double[][] newPi) {
-        for (int s = 0; s < nS; s++) pi[s] = newPi[s].clone();
-        return this;
-    }
-
     /**
      * The same MDP with one extra action nA, "stay": the state is unchanged and the reward is 0
      * (matching {@link MdpAgent}'s no-op; terminal-only rewards are assumed).
@@ -261,18 +255,19 @@ public final class TabularMdp {
     /** pi(a|s). */
     public double policyProb(int s, int a) { return pi[s][a]; }
 
-    /** Replace the evaluated policy; each row must be a probability vector over the nA actions. */
+    /**
+     * Replace the evaluated policy; each row must be a probability vector over the nA actions. Rows are
+     * copied into the existing array, so a reference obtained from {@link #policy()} stays live.
+     */
     public TabularMdp setPolicy(double[][] newPi) {
         if (newPi.length != nS) throw new IllegalArgumentException("policy needs " + nS + " rows");
-        double[][] q = new double[nS][];
         for (int s = 0; s < nS; s++) {
             if (newPi[s].length != nA) throw new IllegalArgumentException("policy rows need " + nA + " entries");
             double sum = 0;
             for (double x : newPi[s]) { if (x < 0) throw new IllegalArgumentException("negative probability"); sum += x; }
             if (Math.abs(sum - 1) > Law.MASS_TOLERANCE) throw new IllegalArgumentException("row " + s + " sums to " + sum);
-            q[s] = newPi[s].clone();
         }
-        pi = q;
+        for (int s = 0; s < nS; s++) pi[s] = newPi[s].clone();
         return this;
     }
 }
